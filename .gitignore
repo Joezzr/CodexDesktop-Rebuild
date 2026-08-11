@@ -9,8 +9,11 @@ out/
 dist/
 
 # Upstream ASAR extracts and build-time copies (all generated)
-src/
-src/.build-mode
+/src/
+/src/.build-mode
+
+# OpenAI Codex Rust source is pinned and patched into an external build cache.
+/codex-rs/
 
 # Version check state (local only)
 scripts/.versions.json

@@ -28,6 +28,14 @@ const TARGET_TRIPLE_MAP = {
   "win": "x86_64-pc-windows-msvc",
 };
 
+const LOCAL_BIN_DIR_MAP = {
+  "mac-arm64": "mac-arm64",
+  "mac-x64": "mac-x64",
+  "linux-x64": "linux-x64",
+  "linux-arm64": "linux-arm64",
+  "win": "win-x64",
+};
+
 // macOS-only resources to strip for Linux
 const MACOS_STRIP = new Set([
   "codex_chronicle", "node", "node_repl",
@@ -48,6 +56,27 @@ function copyRecursive(src, dest, skipFiles, skipDirs) {
     else { fs.copyFileSync(s, d); count++; }
   }
   return count;
+}
+
+function resolveLocalCodexVendor(platform) {
+  const triple = TARGET_TRIPLE_MAP[platform];
+  if (!triple) return null;
+
+  const binName = platform === "win" ? "codex.exe" : "codex";
+  const localBinDir = LOCAL_BIN_DIR_MAP[platform];
+  const candidates = [
+    localBinDir && path.join(PROJECT_ROOT, "resources", "bin", localBinDir, binName),
+    path.join(PROJECT_ROOT, "codex-rs", "target", triple, "release", binName),
+  ].filter(Boolean);
+
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+function describeCodexVendor(vendorPath) {
+  const relativePath = path.relative(PROJECT_ROOT, vendorPath).split(path.sep).join("/");
+  return relativePath.startsWith("resources/bin") || relativePath.startsWith("codex-rs/target")
+    ? "local codex-rs build"
+    : "@cometix/codex";
 }
 
 /**
@@ -115,6 +144,9 @@ function ensureVendorExtracted(platform) {
 }
 
 function resolveCodexVendor(platform) {
+  const local = resolveLocalCodexVendor(platform);
+  if (local) return local;
+
   const vendorRoot = ensureVendorExtracted(platform);
   if (!vendorRoot) return null;
   const binName = platform === "win" ? "codex.exe" : "codex";
@@ -177,9 +209,9 @@ function main() {
     const dest = path.join(sourceDir, codexBinName);
     fs.copyFileSync(vendorCodex, dest);
     try { fs.chmodSync(dest, 0o755); } catch {}
-    console.log(`   [codex] replaced with @cometix/codex`);
+    console.log(`   [codex] replaced with ${describeCodexVendor(vendorCodex)}`);
   } else {
-    console.log(`   [!] @cometix/codex vendor not found for ${platform}, keeping upstream`);
+    console.log(`   [!] local codex-rs build or @cometix/codex vendor not found for ${platform}, keeping upstream`);
   }
 
   // 2b. For Linux: replace rg with platform-native version from @cometix/codex

@@ -72,16 +72,31 @@ function extractArchive(archive, dest) {
     execSync(`ditto -xk "${archive}" "${dest}"`);
   } else {
     // 7zz for Windows MSIX and Linux (symlinks don't matter — only ASAR content used)
+    const needsWindowsShell = archive.toLowerCase().endsWith(".msix");
+    const extractionIsComplete = () => !needsWindowsShell || isCompleteWindowsExtract(dest);
     for (const bin of ["7zz", "7z"]) {
       try {
+        clearDir(dest);
         execSync(`${bin} x -y -o"${dest}" "${archive}"`, { stdio: "pipe" });
-        return;
+        if (extractionIsComplete()) return;
       } catch {
-        if (fs.readdirSync(dest).length > 0) return;
+        if (extractionIsComplete()) return;
       }
+    }
+    try {
+      clearDir(dest);
+      execSync(`tar -xf "${archive}" -C "${dest}"`, { stdio: "pipe" });
+      if (extractionIsComplete()) return;
+    } catch {
+      if (extractionIsComplete()) return;
     }
     throw new Error(`Failed to extract ${archive}`);
   }
+}
+
+function isCompleteWindowsExtract(dest) {
+  return fs.existsSync(path.join(dest, "app", "Codex.exe")) &&
+    fs.existsSync(path.join(dest, "app", "resources", "app.asar"));
 }
 
 function findFile(dir, name) {
@@ -117,6 +132,21 @@ function countFiles(dir) {
     else n++;
   }
   return n;
+}
+
+function extractAsar(asarPath, destDir) {
+  try {
+    execSync(`npx asar extract "${asarPath}" "${destDir}"`, { stdio: "pipe" });
+    return;
+  } catch (e) {
+    const packageJson = path.join(destDir, "package.json");
+    const extractedCount = fs.existsSync(destDir) ? countFiles(destDir) : 0;
+    if (fs.existsSync(packageJson) && extractedCount > 100) {
+      console.log(`   [warn] asar extract reported missing unpacked files; continuing with ${extractedCount} extracted files`);
+      return;
+    }
+    throw e;
+  }
 }
 
 // ─── Version detection ──────────────────────────────────────────
@@ -223,7 +253,7 @@ function assembleOutput(resourcesDir, destDir, label) {
   // 1. Extract app.asar → _asar/ (for patching)
   const asarDest = path.join(destDir, "_asar");
   console.log("   [asar extract] -> _asar/");
-  execSync(`npx asar extract "${asarPath}" "${asarDest}"`);
+  extractAsar(asarPath, asarDest);
 
   // 2. Copy app.asar.unpacked/ as-is (native modules)
   const unpackedSrc = path.join(resourcesDir, "app.asar.unpacked");
@@ -269,6 +299,7 @@ async function main() {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
 
   const results = {};
+  let hadError = false;
 
   // Detect versions
   if (!SKIP_MAC) {
@@ -302,17 +333,17 @@ async function main() {
   if (!SKIP_MAC && results["mac-arm64"]) {
     try {
       results["mac-arm64"] = await syncMac("arm64", APPCAST_ARM64, path.join(SRC_DIR, "mac-arm64"));
-    } catch (e) { console.error(`   [x] mac-arm64: ${e.message}`); }
+    } catch (e) { hadError = true; console.error(`   [x] mac-arm64: ${e.message}`); }
   }
   if (!SKIP_MAC && results["mac-x64"]) {
     try {
       results["mac-x64"] = await syncMac("x64", APPCAST_X64, path.join(SRC_DIR, "mac-x64"));
-    } catch (e) { console.error(`   [x] mac-x64: ${e.message}`); }
+    } catch (e) { hadError = true; console.error(`   [x] mac-x64: ${e.message}`); }
   }
   if (!SKIP_WIN && results.win) {
     try {
       results.win = await syncWin(path.join(SRC_DIR, "win"));
-    } catch (e) { console.error(`   [x] win: ${e.message}`); }
+    } catch (e) { hadError = true; console.error(`   [x] win: ${e.message}`); }
   }
 
   const saved = loadVersions();
@@ -325,6 +356,8 @@ async function main() {
   for (const [key, info] of Object.entries(results)) {
     console.log(`   ${key}: ${info.version}`);
   }
+
+  if (hadError) process.exit(1);
 }
 
 main().catch((e) => { console.error(`\n[x] ${e.message}`); process.exit(1); });
