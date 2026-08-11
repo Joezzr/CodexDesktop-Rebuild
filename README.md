@@ -2,6 +2,8 @@
 
 Cross-platform Electron build for OpenAI Codex Desktop App.
 
+[简体中文：Windows 优化版说明](README.zh-CN.md)
+
 ## Supported Platforms
 
 | Platform | Architecture | Status |
