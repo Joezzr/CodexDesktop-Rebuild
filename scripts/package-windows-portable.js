@@ -10,6 +10,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { CODEX_VERSION } = require("./prepare-codex-rust");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(PROJECT_ROOT, "out");
@@ -52,10 +53,7 @@ function findSevenZip() {
 }
 
 function readRustVersion() {
-  const manifest = fs.readFileSync(path.join(PROJECT_ROOT, "codex-rs", "Cargo.toml"), "utf8");
-  const match = manifest.match(/^\[workspace\.package\][\s\S]*?^version\s*=\s*"([^"]+)"/m);
-  if (!match) fail("Unable to read codex-rs workspace version.");
-  return match[1];
+  return CODEX_VERSION;
 }
 
 function validateApp() {
