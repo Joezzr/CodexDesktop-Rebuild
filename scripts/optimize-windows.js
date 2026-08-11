@@ -258,14 +258,16 @@ function pruneNonWindowsResources(isCheck) {
   }
 
   // Bundled browser plugins include native LevelDB builds for every platform.
-  const pluginsRoot = path.join(winRoot, "plugins");
-  for (const prebuilds of findDirectories(pluginsRoot, "prebuilds")) {
+  // Native dependencies can move between bundled plugins and cua_node as the
+  // upstream shell changes. Scan the full Windows resource tree instead of a
+  // hard-coded plugin subtree.
+  for (const prebuilds of findDirectories(winRoot, "prebuilds")) {
     for (const entry of fs.readdirSync(prebuilds, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name === "win32-x64") continue;
       removeTarget(path.join(prebuilds, entry.name), isCheck, totals);
     }
   }
-  for (const snappy of findDirectories(pluginsRoot, "snappy")) {
+  for (const snappy of findDirectories(winRoot, "snappy")) {
     for (const name of ["linux", "mac"]) {
       removeTarget(path.join(snappy, name), isCheck, totals);
     }

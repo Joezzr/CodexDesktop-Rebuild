@@ -176,8 +176,11 @@ function verifyArchive(sevenZip, archive) {
     if (!paths.includes(required)) fail(`Portable archive is missing ${required}.`);
   }
   if (paths.includes("Codex.exe")) fail("Portable archive still contains the MSIX-only Codex.exe.");
-  if (paths.some((entry) => /\\prebuilds\\(?!win32-x64(?:\\|$))/.test(entry))) {
-    fail("Portable archive contains a non-Windows native prebuild.");
+  const nonWindowsPrebuild = paths.find((entry) =>
+    /\\prebuilds\\(?!win32-x64(?:\\|$))/.test(entry),
+  );
+  if (nonWindowsPrebuild) {
+    fail(`Portable archive contains a non-Windows native prebuild: ${nonWindowsPrebuild}`);
   }
 }
 

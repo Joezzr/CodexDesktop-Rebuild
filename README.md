@@ -59,11 +59,13 @@ unavailable. The standalone repair can be checked with
 
 ```bash
 npm install
-npm run prepare:codex-rust
-npm run sync:win
-npm run patch:win
 npm run build:win-x64
 ```
+
+The Windows build command prepares the pinned Rust source, synchronizes the current
+official Windows shell, applies the Windows patch set and performance changes, then
+creates the rebuilt app and portable executable. The individual preparation commands
+remain available when debugging a specific stage.
 
 `npm run prepare:codex-rust` verifies the pinned annotated tag, commit, complete
 checkout, and idempotent patch state. To use a separately prepared Rust workspace,

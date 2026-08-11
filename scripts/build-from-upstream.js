@@ -149,14 +149,15 @@ function pruneWindowsOutput(resourcesDir) {
     removeWindowsOutputTarget(resourcesDir, path.join(skyTargets, name), totals);
   }
 
-  const pluginsRoot = path.join(resourcesDir, "plugins");
-  for (const prebuilds of findDirectories(pluginsRoot, "prebuilds")) {
+  // Reusable shells may carry native dependencies outside plugins (for
+  // example under cua_node). Scan the complete output resource tree.
+  for (const prebuilds of findDirectories(resourcesDir, "prebuilds")) {
     for (const entry of fs.readdirSync(prebuilds, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name === "win32-x64") continue;
       removeWindowsOutputTarget(resourcesDir, path.join(prebuilds, entry.name), totals);
     }
   }
-  for (const snappy of findDirectories(pluginsRoot, "snappy")) {
+  for (const snappy of findDirectories(resourcesDir, "snappy")) {
     for (const name of ["linux", "mac"]) {
       removeWindowsOutputTarget(resourcesDir, path.join(snappy, name), totals);
     }

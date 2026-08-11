@@ -41,7 +41,16 @@ function patchSource(source, { fixedByteLength = false } = {}) {
     changed = true;
   }
 
-  const providerOffset = output.indexOf("function b3c", diagnosticOffset);
+  // Minified function names change with every shell build. Locate the provider
+  // structurally: it is the nearest function before the planAtLogin merge.
+  const planAtLoginOffset = output.indexOf("planAtLogin", diagnosticOffset);
+  if (planAtLoginOffset < 0) throw new Error("Unable to find the desktop auth provider fields");
+  const providerPrefix = output.slice(diagnosticOffset, planAtLoginOffset);
+  const providerFunctions = [
+    ...providerPrefix.matchAll(/function [A-Za-z_$][\w$]*\([^)]*\)\{/g),
+  ];
+  const providerMatch = providerFunctions.at(-1);
+  const providerOffset = providerMatch == null ? -1 : diagnosticOffset + providerMatch.index;
   if (providerOffset < 0) throw new Error("Unable to find the desktop auth provider");
   const providerEnd = Math.min(output.length, providerOffset + 8_000);
   const providerSection = output.slice(providerOffset, providerEnd);
