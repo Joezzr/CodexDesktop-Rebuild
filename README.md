@@ -30,6 +30,51 @@ npm run build:linux-arm64
 npm run build:all
 ```
 
+## Windows x64 with pinned codex-rs
+
+The Windows build pins OpenAI Codex `rust-v0.148.0-alpha.5` by commit and prepares
+the source in an external local cache. Only the versioned Windows patch set under
+`patches/codex-rs/` is tracked by this repository; the full upstream Rust workspace
+is not vendored into Git history. Windows packaging builds `codex-cli` locally and
+stages the matching alpha.5 standalone code-mode host, then injects `codex.exe`
+and `codex-code-mode-host.exe` into the Desktop package's `resources` directory.
+
+Alpha.7 enables the V8 sandbox, but rusty_v8 150.4.0 does not publish the
+corresponding Windows static-library archive. The Windows build therefore uses
+the matching OpenAI release `codex-code-mode-host.exe` and verifies its size and
+SHA-256 through the GitHub Release API; set `CODEX_FORCE_LOCAL_CODE_MODE_HOST=1`
+only when a complete local V8-from-source toolchain is available.
+
+The Windows build also applies Windows-only performance optimizations: normal
+app windows use opaque surfaces instead of Mica, Rust symbols are stripped from
+the packaged CLI, and non-Windows native prebuilds are removed.
+
+The Windows patch set also repairs the newer sidebar project model. On first
+launch it backs up `.codex-global-state.json`, migrates legacy saved workspace
+roots into `local-projects`, remaps project ordering and assignments, and keeps
+account-scoped custom sections available when the remote rollout gate is
+unavailable. The standalone repair can be checked with
+`npm run repair:win-projects -- --check` and applied with
+`npm run repair:win-projects` while Codex is closed.
+
+```bash
+npm install
+npm run prepare:codex-rust
+npm run sync:win
+npm run patch:win
+npm run build:win-x64
+```
+
+`npm run prepare:codex-rust` verifies the pinned annotated tag, commit, complete
+checkout, and idempotent patch state. To use a separately prepared Rust workspace,
+set `CODEX_RUST_DIR` before running `npm run build:codex-win-x64`; explicitly
+supplied workspaces are version-checked but are not modified automatically.
+
+`build:win-x64` produces one self-extracting portable EXE. The MSIX-only
+`Codex.exe` wrapper is excluded; after temporary extraction the portable
+launcher starts the unpackaged Owl/Chromium host directly. No package
+registration or certificate installation is required.
+
 ## Development
 
 ```bash
