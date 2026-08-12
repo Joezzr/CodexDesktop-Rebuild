@@ -9,10 +9,10 @@
 ## 当前版本组成
 
 - Windows 壳：构建时同步并修补官方 Windows Desktop 壳。
-- Codex 后端：固定到 OpenAI Codex `rust-v0.148.0-alpha.5` 的指定提交。
+- Codex 后端：固定到 OpenAI Codex `rust-v0.148.0-alpha.9` 的指定提交。
 - 构建架构：`x86_64-pc-windows-msvc`。
 - 发布形式：单文件自解压免安装 EXE，无需安装 MSIX、注册应用包或安装证书。
-- 当前产物：`out/Codex-Windows-x64-0.148.0-alpha.5.exe`。
+- 当前产物：`out/Codex-Windows-x64-0.148.0-alpha.9.exe`。
 
 壳版本与 Codex Rust 后端版本是两个独立维度：同步新壳不会自动改变固定的后端版本；升级后端时也会继续检查与当前壳的协议兼容性。
 
@@ -46,14 +46,14 @@
 
 ```powershell
 $env:CODEX_GPU_MODE = "software"
-.\Codex-Windows-x64-0.148.0-alpha.5.exe
+.\Codex-Windows-x64-0.148.0-alpha.9.exe
 Remove-Item Env:CODEX_GPU_MODE
 ```
 
 也可以仅对本次启动传入参数：
 
 ```powershell
-.\Codex-Windows-x64-0.148.0-alpha.5.exe --software-rendering
+.\Codex-Windows-x64-0.148.0-alpha.9.exe --software-rendering
 ```
 
 软件渲染是兼容性兜底选项，不建议在没有 GPU 异常时长期启用。普通模式已经通过不透明窗口和减少动态效果降低了合成负担。

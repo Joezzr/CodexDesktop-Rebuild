@@ -12,10 +12,10 @@ const { spawnSync } = require("child_process");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const CODEX_REPOSITORY = "https://github.com/openai/codex.git";
-const CODEX_VERSION = "0.148.0-alpha.5";
+const CODEX_VERSION = "0.148.0-alpha.9";
 const CODEX_TAG = `rust-v${CODEX_VERSION}`;
-const CODEX_TAG_OBJECT = "162cd783906351ecda25364b345b5fb95872fff3";
-const CODEX_COMMIT = "f757695017737bb9fcdbc595a101721704205e76";
+const CODEX_TAG_OBJECT = "44271b1a725e3265d80adde7886d10e48f08d8cc";
+const CODEX_COMMIT = "9392c3fa5bcda342b5b96a1a04d67b2f781617c2";
 const PATCH_DIR = path.join(PROJECT_ROOT, "patches", "codex-rs", CODEX_VERSION);
 
 function run(command, args, options = {}) {

@@ -1,4 +1,5 @@
 diff --git a/codex-rs/protocol/src/error.rs b/codex-rs/protocol/src/error.rs
+index 33ef622..257043f 100644
 --- a/codex-rs/protocol/src/error.rs
 +++ b/codex-rs/protocol/src/error.rs
 @@ -138,9 +138,7 @@ pub enum CodexErrorDetails {
@@ -24,6 +25,7 @@ diff --git a/codex-rs/protocol/src/error.rs b/codex-rs/protocol/src/error.rs
              }
              Some(PlanType::Known(KnownPlan::Pro | KnownPlan::ProLite)) => format!(
 diff --git a/codex-rs/protocol/src/error_tests.rs b/codex-rs/protocol/src/error_tests.rs
+index 1c71801..2567b57 100644
 --- a/codex-rs/protocol/src/error_tests.rs
 +++ b/codex-rs/protocol/src/error_tests.rs
 @@ -284,7 +284,7 @@ fn usage_limit_reached_error_formats_free_plan() {

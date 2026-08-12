@@ -1,7 +1,9 @@
 diff --git a/codex-rs/tui/src/tooltips.rs b/codex-rs/tui/src/tooltips.rs
+index 79e74f5..4795bef 100644
 --- a/codex-rs/tui/src/tooltips.rs
 +++ b/codex-rs/tui/src/tooltips.rs
-@@ -9,13 +9,5 @@ const IS_MACOS: bool = cfg!(target_os = "macos");
+@@ -9,14 +9,6 @@ const ANNOUNCEMENT_TIP_URL: &str =
+ const IS_MACOS: bool = cfg!(target_os = "macos");
  const IS_WINDOWS: bool = cfg!(target_os = "windows");
  
 -const APP_TOOLTIP: &str = "Try the **Desktop app**. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true";
