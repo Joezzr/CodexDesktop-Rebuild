@@ -175,7 +175,13 @@ async function getWindowsVersion() {
   if (!info.categoryId) throw new Error("No CategoryID");
   const pkgs = await msstore.getFileList(cookie, info.categoryId, "Retail");
   if (pkgs.length === 0) throw new Error("No packages");
-  const pkg = pkgs[0];
+  // The Retail file list may put non-x64 packages first (e.g. arm64). This
+  // build targets x86_64, so prefer an explicit x64 package and only fall
+  // back to a non-arm64 package before accepting the raw first entry.
+  const pkg =
+    pkgs.find((p) => /x64/i.test(p.name)) ||
+    pkgs.find((p) => !/arm64/i.test(p.name)) ||
+    pkgs[0];
   const url = await msstore.getDownloadUrl(pkg.updateID, pkg.revisionNumber, "Retail", pkg.digest);
   const verMatch = pkg.name.match(/_(\d+\.\d+\.\d+(?:\.\d+)?)_/);
   return { version: verMatch?.[1] || "unknown", url, packageName: pkg.name };

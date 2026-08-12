@@ -406,8 +406,11 @@ function buildWin(platform, createZipOutput = true) {
   const shellCandidates = [
     process.env.CODEX_WINDOWS_SHELL_DIR,
     path.join(OUT_DIR, `Codex-win-x64-${version}`),
-    ...reusableShells,
+    // Prefer the freshly extracted MSIX shell over stale reusable shells so
+    // repeated builds never mix Chromium binaries from different revisions.
+    // isCompleteWindowsShell still guards completeness before selection.
     hasExtractedApp ? appDir : null,
+    ...reusableShells,
   ].filter(Boolean);
   const shellSource = shellCandidates.find(isCompleteWindowsShell);
   if (!shellSource) {
