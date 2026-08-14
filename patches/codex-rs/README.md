@@ -6,9 +6,9 @@ while preserving the small behavior changes required by the Windows package.
 
 Current source:
 
-- tag: `rust-v0.148.0-alpha.9`
-- annotated tag object: `44271b1a725e3265d80adde7886d10e48f08d8cc`
-- commit: `9392c3fa5bcda342b5b96a1a04d67b2f781617c2`
+- tag: `rust-v0.148.0-alpha.13`
+- annotated tag object: `41e267d70e20d00cfe927f67f454c7059177eb50`
+- commit: `338838f5c90162c763e8c37ea4c1804075c52776`
 
 Run `npm run prepare:codex-rust` to create or verify the generated source cache. Set
 `CODEX_RUST_DIR` only when intentionally building a separately prepared compatible workspace.

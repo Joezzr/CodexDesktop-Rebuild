@@ -9,10 +9,10 @@
 ## 当前版本组成
 
 - Windows 壳：构建时同步并修补官方 Windows Desktop 壳。
-- Codex 后端：固定到 OpenAI Codex `rust-v0.148.0-alpha.9` 的指定提交。
+- Codex 后端：固定到 OpenAI Codex `rust-v0.148.0-alpha.13` 的指定提交。
 - 构建架构：`x86_64-pc-windows-msvc`。
-- 发布形式：单文件自解压免安装 EXE，无需安装 MSIX、注册应用包或安装证书。
-- 当前产物：`out/Codex-Windows-x64-0.148.0-alpha.9.exe`。
+- 发布形式：目录式免安装版，直接运行 `ChatGPT.exe`，无需安装 MSIX、注册应用包或安装证书。
+- 当前产物：`out/Codex-win-x64-0.148.0-alpha.13-shell-26.803.10989.0-account-access-fix-v3/ChatGPT.exe`。
 
 壳版本与 Codex Rust 后端版本是两个独立维度：同步新壳不会自动改变固定的后端版本；升级后端时也会继续检查与当前壳的协议兼容性。
 
@@ -25,7 +25,7 @@
 | 可控的 GPU 模式 | 默认继续使用硬件加速；支持按需切换为软件渲染 | 正常设备保持流畅度；显卡驱动异常、花屏或 GPU 占用异常时可快速排障和绕开驱动问题 |
 | 裁剪非 Windows 资源 | 从最终 Windows 包中删除 Darwin/Linux 可执行文件、Linux CUA 帮助程序、macOS/Linux 插件原生预编译、HIDAPI 源目录和 Snappy 原生文件 | 减少发布包、解压目录和临时目录占用，同时减少启动时杀毒软件需要扫描的无效文件 |
 | 剥离 Rust 符号 | `codex.exe` 的 Release 构建启用 `strip=symbols` | 减小后端可执行文件，并降低 app-server 启动时的磁盘读取和安全软件扫描成本 |
-| 单文件免安装打包 | 使用 LZMA2 生成自解压 EXE，直接启动未打包的 Owl/Chromium 主程序 | 无需 MSIX 身份、证书和系统级安装；便于复制、备份和在不同目录运行 |
+| 目录式免安装打包 | 保留完整 Windows 运行目录，直接启动未打包的 Owl/Chromium 主程序 | 无需 MSIX 身份、证书和系统级安装；避免每次启动重复解压，便于复制和备份 |
 | 固定源码与补丁 | 校验 Codex tag、提交、完整 checkout 和补丁幂等性；官方 code-mode host 同时校验大小与 SHA-256 | 避免“同名版本但源码或二进制不同”，提高后续升级、回退和复现构建的可靠性 |
 
 这些优化最容易在以下场景中感知：
@@ -46,14 +46,14 @@
 
 ```powershell
 $env:CODEX_GPU_MODE = "software"
-.\Codex-Windows-x64-0.148.0-alpha.9.exe
+.\ChatGPT.exe
 Remove-Item Env:CODEX_GPU_MODE
 ```
 
 也可以仅对本次启动传入参数：
 
 ```powershell
-.\Codex-Windows-x64-0.148.0-alpha.9.exe --software-rendering
+.\ChatGPT.exe --software-rendering
 ```
 
 软件渲染是兼容性兜底选项，不建议在没有 GPU 异常时长期启用。普通模式已经通过不透明窗口和减少动态效果降低了合成负担。
@@ -72,17 +72,17 @@ Remove-Item Env:CODEX_GPU_MODE
 
 ## 免安装版的行为
 
-双击单文件 EXE 后，程序会先把运行文件解压到临时位置，再启动 `ChatGPT.exe`。因此：
+进入成品目录并运行 `ChatGPT.exe` 即可启动。目录版不会先把整个程序重复解压到临时位置，因此：
 
 - 不会写入 `Program Files`，也不要求管理员权限完成传统安装；
-- 第一次启动或安全软件首次扫描时可能比已经解压的目录版稍慢；
-- 运行期间仍需要临时磁盘空间，单文件大小不等于运行时实际占用；
+- 第一次启动或安全软件首次扫描时仍可能稍慢；
+- 程序文件直接从成品目录读取，不会为单文件自解压额外占用一整份临时空间；
 - 用户登录、项目列表和会话等状态仍由 Codex/ChatGPT 的用户数据目录管理，不属于程序安装目录。
 
-如更重视启动速度，可直接运行构建生成的目录版：
+当前推荐直接运行经过验证的目录版：
 
 ```text
-out\win\Codex-win32-x64\ChatGPT.exe
+out\Codex-win-x64-0.148.0-alpha.13-shell-26.803.10989.0-account-access-fix-v3\ChatGPT.exe
 ```
 
 ## 构建 Windows x64 版本
@@ -101,7 +101,7 @@ npm run build:win-x64
 3. 同步当前官方 Windows 壳；
 4. 应用账号、项目侧边栏和 Windows UI 补丁；
 5. 执行 Windows 性能优化与非 Windows 资源裁剪；
-6. 重建应用并生成单文件免安装 EXE；
+6. 重建应用并整理目录式免安装版本；
 7. 检查必要文件、非 Windows 预编译残留、PE 文件头和最终归档内容。
 
 可单独执行以下检查：
@@ -119,7 +119,7 @@ npm run repair:win-projects -- --check
 - 不透明表面会牺牲部分 Mica/透明材质观感，换取更稳定的合成性能。
 - 减少动态效果会让部分过渡动画更直接。
 - 非 Windows 原生资源只从 Windows 发布产物中裁剪；仓库仍保留上游 macOS/Linux 构建能力。
-- 单文件版偏向携带方便，目录版偏向更快启动和更少的重复解压。
+- 目录版文件数量较多，但启动更直接，也不会产生整包重复解压数据。
 - 为保证可复现和兼容性，后端不会在构建时盲目追踪最新 alpha，而是经过分析后更新固定版本与补丁集。
 
 ## 分支维护方式
