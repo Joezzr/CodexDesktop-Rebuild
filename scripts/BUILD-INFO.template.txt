@@ -1,0 +1,29 @@
+Codex Desktop Windows portable directory
+
+Codex Rust: 0.148.0-alpha.15
+Upstream tag: rust-v0.148.0-alpha.15
+Annotated tag object: bd8e79e102f06dbddf99f9f9e734edf1882606ed
+Upstream commit: ffe1de5cec9c0cd02629eb246534e4622da0ff41
+Windows shell: 26.803.10989.0
+Windows patch set: account-access-fix-v3
+Launcher: ChatGPT.exe
+
+SHA-256
+ChatGPT.exe
+__CHATGPT_EXE_SHA__
+
+resources\app.asar
+__APP_ASAR_SHA__
+
+resources\codex.exe
+__CODEX_EXE_SHA__
+
+resources\codex-code-mode-host.exe
+__CODEX_HOST_SHA__
+
+Validation
+- codex --version: codex-cli 0.148.0-alpha.15
+- app-server help: passed
+- code-mode host help: passed
+- isolated Desktop launch: passed (bundled app-server observed)
+- package registration: not required
