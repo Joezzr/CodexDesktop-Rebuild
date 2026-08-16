@@ -50,6 +50,9 @@ only when a complete local V8-from-source toolchain is available.
 The Windows build also applies Windows-only performance optimizations: normal
 app windows use opaque surfaces instead of Mica, Rust symbols are stripped from
 the packaged CLI, and non-Windows native prebuilds are removed.
+Before Cargo runs, the state migration SQL files are normalized to Windows CRLF
+line endings so SQLx migration checksums remain compatible with the official
+Microsoft Store build and its existing `%USERPROFILE%\.codex` databases.
 
 The Windows patch set also repairs the newer sidebar project model. On first
 launch it backs up `.codex-global-state.json`, migrates legacy saved workspace
@@ -72,7 +75,10 @@ remain available when debugging a specific stage.
 `npm run prepare:codex-rust` verifies the pinned annotated tag, commit, complete
 checkout, and idempotent patch state. To use a separately prepared Rust workspace,
 set `CODEX_RUST_DIR` before running `npm run build:codex-win-x64`; explicitly
-supplied workspaces are version-checked but are not modified automatically.
+supplied workspaces are version-checked, and the state migration SQL files are
+normalized to Windows CRLF line endings in place so SQLx migration checksums stay
+compatible with existing `%USERPROFILE%\.codex` databases (use
+`node scripts/build-codex-rust.js --check` to verify without writing).
 
 The validated Windows handoff is the unpacked portable directory
 `out/Codex-win-x64-0.148.0-alpha.18-shell-26.803.10989.0-account-access-fix-v3/`.

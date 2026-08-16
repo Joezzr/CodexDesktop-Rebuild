@@ -77,6 +77,59 @@ function workspaceVersion(manifestPath) {
   return match[1];
 }
 
+function normalizeWindowsMigrationSql(rustDir, isCheck) {
+  const stateDir = path.join(rustDir, "state");
+  if (!fs.existsSync(stateDir)) {
+    console.log(`   [sqlite] state crate not present in ${rustDir}; skipping`);
+    return;
+  }
+
+  // Discover migration directories dynamically (migrations, logs_migrations,
+  // goals_migrations, ...) so future upstream migration sets are covered
+  // without maintaining a hard-coded list.
+  const migrationDirs = fs
+    .readdirSync(stateDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && /migrations/i.test(entry.name))
+    .map((entry) => path.join(stateDir, entry.name))
+    .sort();
+
+  const migrationFiles = migrationDirs.flatMap((migrationDir) =>
+    fs
+      .readdirSync(migrationDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".sql"))
+      .map((entry) => path.join(migrationDir, entry.name)),
+  );
+
+  if (migrationFiles.length === 0) {
+    console.error(`[x] No Codex state migration SQL files found under ${stateDir}`);
+    process.exit(1);
+  }
+
+  let changed = 0;
+  for (const file of migrationFiles) {
+    const source = fs.readFileSync(file, "utf8");
+    const normalized = source.replace(/\r\n?|\n/g, "\r\n");
+    if (normalized !== source) {
+      console.log(`   ${isCheck ? "[?]" : "[*]"} ${path.relative(rustDir, file)}: CRLF normalize`);
+      changed += 1;
+      if (!isCheck) fs.writeFileSync(file, normalized, "utf8");
+      continue;
+    }
+
+    // Already CRLF: reject bare CR (a genuine anomaly, not a line-ending style).
+    if (/\r(?!\n)/.test(source)) {
+      console.error(`[x] Migration SQL contains bare CR in ${file}`);
+      process.exit(1);
+    }
+  }
+
+  console.log(
+    `   [sqlite] verified ${migrationFiles.length} migration SQL files` +
+      ` (${migrationDirs.length} dirs) in Windows CRLF` +
+      (changed === 0 ? "" : `; ${changed} ${isCheck ? "would be normalized" : "normalized"}`),
+  );
+}
+
 function stageOfficialCodeModeHost(manifestPath, stagedBin) {
   const version = workspaceVersion(manifestPath);
   const tag = `rust-v${version}`;
@@ -139,11 +192,13 @@ function defaultCargoTargetDir() {
 }
 
 function main() {
+  const args = process.argv.slice(2);
+  const isCheck = args.includes("--check");
   const platform = parsePlatform();
   const target = TARGETS[platform];
 
   if (!target) {
-    console.error(`[x] Usage: build-codex-rust.js --platform <${Object.keys(TARGETS).join("|")}>`);
+    console.error(`[x] Usage: build-codex-rust.js --platform <${Object.keys(TARGETS).join("|")}> [--check]`);
     process.exit(1);
   }
 
@@ -165,6 +220,11 @@ function main() {
   console.log(`\n== Build codex-rs: ${platform} ==\n`);
   console.log(`   source: ${path.relative(PROJECT_ROOT, rustDir)}`);
   console.log(`   target: ${target.cargoTarget}`);
+  normalizeWindowsMigrationSql(rustDir, isCheck);
+  if (isCheck) {
+    console.log("   [check] migration SQL line endings verified; skipping build");
+    return;
+  }
 
   const env = {
     ...process.env,

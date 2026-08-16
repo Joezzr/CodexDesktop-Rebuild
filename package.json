@@ -32,7 +32,8 @@
     "sync:win": "node scripts/sync-upstream.js --skip-mac",
     "check-update": "node scripts/check-update.js",
     "bump-version": "node scripts/bump-version.js",
-    "rebuild:native": "electron-rebuild"
+    "rebuild:native": "electron-rebuild",
+    "check:win-sqlite": "node scripts/build-codex-rust.js --platform win-x64 --check"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
