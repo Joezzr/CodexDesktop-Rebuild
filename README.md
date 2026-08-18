@@ -81,7 +81,7 @@ compatible with existing `%USERPROFILE%\.codex` databases (use
 `node scripts/build-codex-rust.js --check` to verify without writing).
 
 The validated Windows handoff is the unpacked portable directory
-`out/Codex-win-x64-0.148.0-alpha.21-shell-26.810.7004.0-account-access-fix-v3/`.
+`out/Codex-win-x64-0.148.0-alpha.21/`.
 Launch `ChatGPT.exe` directly from that directory. The MSIX-only `Codex.exe`
 wrapper is excluded, and no package registration or certificate installation
 is required. The self-extracting packager remains available for automation,
