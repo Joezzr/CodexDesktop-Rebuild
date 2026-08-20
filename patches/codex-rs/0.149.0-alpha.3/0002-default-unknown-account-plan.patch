@@ -1,0 +1,18 @@
+--- a/codex-rs/protocol/src/account.rs
++++ b/codex-rs/protocol/src/account.rs
+@@ -10,7 +10,6 @@
+ #[serde(rename_all = "lowercase")]
+ #[ts(rename_all = "lowercase")]
+ pub enum PlanType {
+-    #[default]
+     Free,
+     Go,
+     Plus,
+@@ -39,6 +38,7 @@
+     #[serde(rename = "edu_pro")]
+     #[ts(rename = "edu_pro")]
+     EduPro,
++    #[default]
+     #[serde(other)]
+     Unknown,
+ }
