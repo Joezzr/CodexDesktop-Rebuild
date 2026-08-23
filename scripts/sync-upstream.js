@@ -74,7 +74,11 @@ function extractArchive(archive, dest) {
     // 7zz for Windows MSIX and Linux (symlinks don't matter — only ASAR content used)
     const needsWindowsShell = archive.toLowerCase().endsWith(".msix");
     const extractionIsComplete = () => !needsWindowsShell || isCompleteWindowsExtract(dest);
-    for (const bin of ["7zz", "7z"]) {
+    // 7-Zip is often installed but not on PATH; probe the default location too.
+    const sevenZipCandidates = ["7zz", "7z"];
+    const defaultInstall = path.join(process.env.ProgramFiles || "C:\\Program Files", "7-Zip", "7z.exe");
+    if (fs.existsSync(defaultInstall)) sevenZipCandidates.push(`"${defaultInstall}"`);
+    for (const bin of sevenZipCandidates) {
       try {
         clearDir(dest);
         execSync(`${bin} x -y -o"${dest}" "${archive}"`, { stdio: "pipe" });
@@ -97,6 +101,23 @@ function extractArchive(archive, dest) {
 function isCompleteWindowsExtract(dest) {
   return fs.existsSync(path.join(dest, "app", "Codex.exe")) &&
     fs.existsSync(path.join(dest, "app", "resources", "app.asar"));
+}
+
+// MSIX entries store reserved characters percent-encoded (e.g. "@" as %40).
+// 7-Zip writes those names literally, but the asar tool resolves unpacked
+// entries with their decoded names. Decode the app.asar.unpacked tree so
+// `asar extract` can find every unpacked file; the rest of the extraction
+// keeps upstream naming (cua_node prune paths rely on the encoded form).
+function decodeMsixNames(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) decodeMsixNames(entryPath);
+    const decoded = entry.name.replace(/%[0-9A-Fa-f]{2}/g, (m) => String.fromCharCode(parseInt(m.slice(1), 16)));
+    if (decoded === entry.name || fs.existsSync(path.join(dir, decoded))) continue;
+    fs.renameSync(entryPath, path.join(dir, decoded));
+  }
 }
 
 function findFile(dir, name) {
@@ -236,6 +257,7 @@ async function syncWin(destDir) {
   console.log("   [unzip]");
   clearDir(extractDir);
   extractArchive(msixPath, extractDir);
+  decodeMsixNames(path.join(extractDir, "app", "resources", "app.asar.unpacked"));
 
   const resourcesDir = path.join(extractDir, "app", "resources");
   if (!fs.existsSync(resourcesDir)) {

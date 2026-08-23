@@ -14,7 +14,7 @@ const { CODEX_VERSION } = require("./prepare-codex-rust");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(PROJECT_ROOT, "out");
-const APP_DIR = path.join(OUT_DIR, "win", "Codex-win32-x64");
+const APP_DIR = path.join(OUT_DIR, `Codex-win-x64-${CODEX_VERSION}`);
 const WORK_DIR = path.join(OUT_DIR, ".portable-build");
 const TOOLS_DIR = path.join(OUT_DIR, ".portable-tools");
 const LZMA_SDK_URL =

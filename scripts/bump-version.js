@@ -21,6 +21,9 @@ const SRC_DIR = path.join(__dirname, "..", "src");
 
 function findUpstreamPkg() {
   for (const plat of ["unix", "win"]) {
+    // Synced shells extract the ASAR into _asar/; the package.json lives there.
+    const asar = path.join(SRC_DIR, plat, "_asar", "package.json");
+    if (fs.existsSync(asar)) return asar;
     const p = path.join(SRC_DIR, plat, "package.json");
     if (fs.existsSync(p)) return p;
   }

@@ -12,6 +12,7 @@
  * Requires @cometix/codex CLI with thread/delete support.
  */
 const fs = require("fs");
+const path = require("path");
 const acorn = require("acorn");
 const { locateBundles, relPath } = require("./patch-util");
 
@@ -273,6 +274,31 @@ function main() {
   const platform = args.find((a) =>
     ["mac-arm64", "mac-x64", "win"].includes(a),
   );
+
+  // Newer shells (26.818+) ship archived-chat deletion natively
+  // (deleteArchivedConversation / deleteAllArchivedConversations plus the
+  // settings UI). When the native feature is present, this patch is obsolete.
+  const assetsDir = path.join(
+    __dirname,
+    "..",
+    "src",
+    platform || "win",
+    "_asar",
+    "webview",
+    "assets",
+  );
+  const initialFiles = fs.existsSync(assetsDir)
+    ? fs.readdirSync(assetsDir).filter((f) => /^app-initial-.*\.js$/.test(f))
+    : [];
+  for (const name of initialFiles) {
+    try {
+      if (fs.readFileSync(path.join(assetsDir, name), "utf8").includes("deleteArchivedConversation")) {
+        console.log("  [ok] upstream ships archived-chat deletion natively; patch not needed");
+        console.log("  [done] routes: 0, buttons: 0 (native)");
+        return;
+      }
+    } catch {}
+  }
 
   console.log("  [layer 1] app-main: delete-conversation route");
   const appMainBundles = locateBundles({

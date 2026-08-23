@@ -118,6 +118,23 @@ function main() {
 
     const patches = collectPatches(ast, source);
 
+    // Case 3: newer shells render the build-info dialog as inline HTML
+    // (<div class="copyright">© OpenAI</div>) instead of calling
+    // setAboutPanelOptions with a copyright property.
+    const htmlMatch = source.match(/<div class="copyright">[^<]*<\/div>/);
+    if (patches.length === 0 && htmlMatch && htmlMatch[0].includes(OLD_COPYRIGHT)) {
+      if (isCheck) {
+        console.log(`   [?] offset ${htmlMatch.index}: ${htmlMatch[0]}`);
+        continue;
+      }
+      const replacement = `<div class="copyright">${NEW_COPYRIGHT}</div>`;
+      const code =
+        source.slice(0, htmlMatch.index) + replacement + source.slice(htmlMatch.index + htmlMatch[0].length);
+      fs.writeFileSync(bundle.path, code, "utf-8");
+      console.log(`   [ok] Copyright updated in build-info HTML`);
+      continue;
+    }
+
     if (patches.length === 0) {
       // Check if already patched
       if (source.includes(NEW_COPYRIGHT)) {

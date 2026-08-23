@@ -47,14 +47,23 @@ function collectPatches(ast, source) {
     const fnSrc = source.slice(node.start, node.end);
     if (!fnSrc.includes("authMethod") || !fnSrc.includes("fast_mode")) return;
 
-    // Inside this function, find: X.authMethod !== `chatgpt`
+    // Inside this function, find the auth gate: a !== comparison against the
+    // "chatgpt" literal. Older shells compared X.authMethod !== `chatgpt`
+    // directly; newer shells resolve the auth method into a local variable
+    // first (let n = await Iri(e,t); if (n !== `chatgpt`) return !1), so match
+    // either side being the literal.
     walk(node, (child) => {
       if (child.type !== "BinaryExpression" || child.operator !== "!==") return;
 
-      const childSrc = source.slice(child.start, child.end);
-      if (!childSrc.includes("authMethod") || !childSrc.includes("chatgpt"))
-        return;
+      const isChatGptLiteral = (side) =>
+        (side?.type === "Literal" && side.value === "chatgpt") ||
+        (side?.type === "TemplateLiteral" &&
+          side.expressions.length === 0 &&
+          side.quasis.length === 1 &&
+          side.quasis[0].value.cooked === "chatgpt");
+      if (!isChatGptLiteral(child.left) && !isChatGptLiteral(child.right)) return;
 
+      const childSrc = source.slice(child.start, child.end);
       if (childSrc === "!1") return;
 
       // Avoid duplicate patches at same offset

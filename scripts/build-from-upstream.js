@@ -13,6 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync, execSync } = require("child_process");
+const { CODEX_VERSION } = require("./prepare-codex-rust");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const SRC_DIR = path.join(PROJECT_ROOT, "src");
@@ -423,9 +424,11 @@ function buildWin(platform, createZipOutput = true) {
 
   // Copy a complete executable shell first. Some MSIX revisions store only
   // mutable app resources under app/, so overlay those after the shell copy.
-  const outAppDir = path.join(OUT_DIR, "win");
-  clearDir(outAppDir);
-  const outApp = path.join(outAppDir, "Codex-win32-x64");
+  // Keep portable builds versioned. Besides matching the documented handoff
+  // path, this avoids rebuilding into a generic directory that an IDE or a
+  // running smoke-test process may still have open.
+  const outApp = path.join(OUT_DIR, `Codex-win-x64-${CODEX_VERSION}`);
+  clearDir(outApp);
   console.log(`   [copy] Windows shell: ${path.relative(PROJECT_ROOT, shellSource)}`);
   copyRecursive(shellSource, outApp);
   if (hasExtractedApp && path.resolve(shellSource) !== path.resolve(appDir)) {
@@ -467,6 +470,11 @@ function buildWin(platform, createZipOutput = true) {
   // A complete upstream Windows shell can contain Darwin/Linux helpers. Do
   // this after all overlays so they cannot be reintroduced into the ZIP.
   pruneWindowsOutput(resourcesDir);
+  const msixWrapper = path.join(outApp, "Codex.exe");
+  if (fs.existsSync(msixWrapper)) {
+    fs.rmSync(msixWrapper, { force: true });
+    console.log("   [prune] removed MSIX-only Codex.exe wrapper");
+  }
 
   if (createZipOutput) {
     const zipName = `Codex-win-x64-${version}.zip`;

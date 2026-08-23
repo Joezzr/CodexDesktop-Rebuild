@@ -55,7 +55,7 @@ function patchSource(source, { fixedByteLength = false } = {}) {
   const providerEnd = Math.min(output.length, providerOffset + 8_000);
   const providerSection = output.slice(providerOffset, providerEnd);
   const contextFallbackPattern =
-    /let cdxAi=q\([A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\?[A-Za-z_$][\w$]*\?\.userId\?\?cdxAi\.userId\?\?null:null/;
+    /let cdxAi=q\([A-Za-z_$][\w$]*\)[^;]*cdxAi\?\.userId/;
   if (!contextFallbackPattern.test(providerSection)) {
     const contextPattern =
       /;let ([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\?([A-Za-z_$][\w$]*)\?\.userId\?\?null:null,([A-Za-z_$][\w$]*)=\2\?\3\?\.accountId\?\?null:null,([A-Za-z_$][\w$]*)=\2\?([A-Za-z_$][\w$]*)\.email\?\?\3\?\.email\?\?null:null,([A-Za-z_$][\w$]*)=\2\?\6\.planAtLogin\?\?\3\?\.plan\?\?null:null,/;
@@ -63,10 +63,10 @@ function patchSource(source, { fixedByteLength = false } = {}) {
     if (!match) throw new Error("Unable to locate the desktop auth context identity fields");
     const [, userVar, isChatGptVar, infoVar, accountVar, emailVar, baseAuthVar, planVar] = match;
     const replacement =
-      `;let cdxAi=q(uw),${userVar}=${isChatGptVar}?${infoVar}?.userId??cdxAi.userId??null:null,` +
-      `${accountVar}=${isChatGptVar}?${infoVar}?.accountId??cdxAi.accountId??null:null,` +
+      `;let cdxAi=q(uw),${userVar}=${isChatGptVar}?${infoVar}?.userId??cdxAi?.userId??null:null,` +
+      `${accountVar}=${isChatGptVar}?${infoVar}?.accountId??cdxAi?.accountId??null:null,` +
       `${emailVar}=${isChatGptVar}?${baseAuthVar}.email??${infoVar}?.email??null:null,` +
-      `${planVar}=${isChatGptVar}?${baseAuthVar}.planAtLogin??${infoVar}?.plan??cdxAi.plan??null:null,`;
+      `${planVar}=${isChatGptVar}?${baseAuthVar}.planAtLogin??${infoVar}?.plan??cdxAi?.plan??null:null,`;
     const absoluteStart = providerOffset + match.index;
     output =
       output.slice(0, absoluteStart) +
