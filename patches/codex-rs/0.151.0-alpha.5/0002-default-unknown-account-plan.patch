@@ -1,0 +1,21 @@
+diff --git a/codex-rs/protocol/src/account.rs b/codex-rs/protocol/src/account.rs
+index d9aa9ebf5..494be9a61 100644
+--- a/codex-rs/protocol/src/account.rs
++++ b/codex-rs/protocol/src/account.rs
+@@ -10,7 +10,6 @@ use crate::auth::PlanType as AuthPlanType;
+ #[serde(rename_all = "lowercase")]
+ #[ts(rename_all = "lowercase")]
+ pub enum PlanType {
+-    #[default]
+     Free,
+     Go,
+     Plus,
+@@ -39,6 +38,7 @@ pub enum PlanType {
+     #[serde(rename = "edu_pro")]
+     #[ts(rename = "edu_pro")]
+     EduPro,
++    #[default]
+     #[serde(other)]
+     Unknown,
+ }
+

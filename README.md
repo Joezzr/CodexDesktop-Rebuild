@@ -34,14 +34,14 @@ npm run build:all
 
 ## Windows x64 with pinned codex-rs
 
-The Windows build pins OpenAI Codex `rust-v0.150.0-alpha.13` by commit and prepares
+The Windows build pins OpenAI Codex `rust-v0.151.0-alpha.5` by commit and prepares
 the source in an external local cache. Only the versioned Windows patch set under
 `patches/codex-rs/` is tracked by this repository; the full upstream Rust workspace
 is not vendored into Git history. Windows packaging builds `codex-cli` locally and
-stages the matching alpha.13 standalone code-mode host, then injects `codex.exe`
+stages the matching alpha.5 standalone code-mode host, then injects `codex.exe`
 and `codex-code-mode-host.exe` into the Desktop package's `resources` directory.
 
-alpha.13 enables the V8 sandbox, but rusty_v8 150.4.0 does not publish the
+Alpha.5 enables the V8 sandbox, but rusty_v8 150.4.0 does not publish the
 corresponding Windows static-library archive. The Windows build therefore uses
 the matching OpenAI release `codex-code-mode-host.exe` and verifies its size and
 SHA-256 through the GitHub Release API; set `CODEX_FORCE_LOCAL_CODE_MODE_HOST=1`
@@ -81,7 +81,7 @@ compatible with existing `%USERPROFILE%\.codex` databases (use
 `node scripts/build-codex-rust.js --check` to verify without writing).
 
 The validated Windows handoff is the unpacked portable directory
-`out/Codex-win-x64-0.150.0-alpha.13/`.
+`out/Codex-win-x64-0.151.0-alpha.5/`.
 Launch `ChatGPT.exe` directly from that directory. The MSIX-only `Codex.exe`
 wrapper is excluded, and no package registration or certificate installation
 is required. The self-extracting packager remains available for automation,
