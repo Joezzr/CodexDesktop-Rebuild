@@ -232,9 +232,15 @@ function main() {
     // Desktop does not archive symbol sidecars. Keeping line-table symbols in
     // codex.exe only increases disk/AV scan cost when app-server starts.
     CARGO_PROFILE_RELEASE_STRIP: process.env.CARGO_PROFILE_RELEASE_STRIP || "symbols",
+    // VS 18 MSVC link.exe hits fatal LNK1103 "debugging information corrupt"
+    // while linking codex-cli on this workspace. rust-lld (bundled with the
+    // Rust toolchain) links the same objects without the PDB writer bug.
+    CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER:
+      process.env.CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER || "rust-lld",
   };
   console.log(`   target-dir: ${env.CARGO_TARGET_DIR}`);
   console.log(`   strip: ${env.CARGO_PROFILE_RELEASE_STRIP}`);
+  console.log(`   linker: ${env.CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER}`);
 
   const cargoArgs = [
     "build",

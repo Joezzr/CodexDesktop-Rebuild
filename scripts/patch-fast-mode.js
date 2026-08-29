@@ -47,24 +47,28 @@ function collectPatches(ast, source) {
     const fnSrc = source.slice(node.start, node.end);
     if (!fnSrc.includes("authMethod") || !fnSrc.includes("fast_mode")) return;
 
-    // Inside this function, find the auth gate: a !== comparison against the
-    // "chatgpt" literal. Older shells compared X.authMethod !== `chatgpt`
-    // directly; newer shells resolve the auth method into a local variable
-    // first (let n = await Iri(e,t); if (n !== `chatgpt`) return !1), so match
-    // either side being the literal.
+    // Inside this function, find the auth gate. Two shapes exist:
+    //   - `X !== `chatgpt`` early-return gates (replace with !1)
+    //   - `a = X === `chatgpt`` flag assignments feeding isServiceTierAllowed
+    //     (replace with !0) — newer shells compute the flag instead of gating.
     walk(node, (child) => {
-      if (child.type !== "BinaryExpression" || child.operator !== "!==") return;
-
       const isChatGptLiteral = (side) =>
         (side?.type === "Literal" && side.value === "chatgpt") ||
         (side?.type === "TemplateLiteral" &&
           side.expressions.length === 0 &&
           side.quasis.length === 1 &&
           side.quasis[0].value.cooked === "chatgpt");
-      if (!isChatGptLiteral(child.left) && !isChatGptLiteral(child.right)) return;
+
+      let replacement = null;
+      if (child.type === "BinaryExpression" && child.operator === "!==") {
+        if (isChatGptLiteral(child.left) || isChatGptLiteral(child.right)) replacement = "!1";
+      } else if (child.type === "BinaryExpression" && child.operator === "===") {
+        if (isChatGptLiteral(child.left) || isChatGptLiteral(child.right)) replacement = "!0";
+      }
+      if (!replacement) return;
 
       const childSrc = source.slice(child.start, child.end);
-      if (childSrc === "!1") return;
+      if (childSrc === "!1" || childSrc === "!0") return;
 
       // Avoid duplicate patches at same offset
       if (patches.some((p) => p.start === child.start)) return;
@@ -73,7 +77,7 @@ function collectPatches(ast, source) {
         id: "fast_mode_auth_gate",
         start: child.start,
         end: child.end,
-        replacement: "!1",
+        replacement,
         original: childSrc,
       });
     });
