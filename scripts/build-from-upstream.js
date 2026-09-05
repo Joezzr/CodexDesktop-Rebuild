@@ -57,7 +57,10 @@ function copyRecursive(src, dest) {
 }
 
 function findWindowsShellExe(dir) {
-  for (const name of ["Codex.exe", "ChatGPT.exe"]) {
+  // Prefer the ChatGPT.exe Owl host: newer shells ship both it and the
+  // MSIX-only Codex.exe wrapper, and only ChatGPT.exe carries the embedded
+  // asar-integrity JSON that patchExeHash rewrites.
+  for (const name of ["ChatGPT.exe", "Codex.exe"]) {
     const candidate = path.join(dir, name);
     if (fs.existsSync(candidate)) return candidate;
   }
@@ -457,7 +460,13 @@ function buildWin(platform, createZipOutput = true) {
     // Newer shells are branded ChatGPT.exe; older extracts use Codex.exe.
     const exePath = findWindowsShellExe(outApp);
     if (exePath) {
-      patchExeHash(exePath, [shellAsarHash, oldHash].filter(Boolean), newHash);
+      if (!patchExeHash(exePath, [shellAsarHash, oldHash].filter(Boolean), newHash)) {
+        if (disableEmbeddedAsarIntegrityFuse(exePath)) {
+          console.log("   [integrity] disabled EnableEmbeddedAsarIntegrityValidation fuse");
+        } else {
+          console.log("   [!] neither an ASCII asar hash nor an enabled integrity fuse was found");
+        }
+      }
     } else {
       console.log("   [!] Windows shell executable not found for hash patching");
     }
@@ -515,6 +524,39 @@ function patchExeHash(exePath, oldHashes, newHash) {
   }
   console.log("   [integrity] no embedded Electron ASAR hash (Owl shell)");
   return false;
+}
+
+// Electron fuse wire: a fixed 32-byte sentinel followed by the version byte,
+// the fuse count byte, and one status byte per v1 fuse (0 removed, 1
+// disabled, 2 enabled). EnableEmbeddedAsarIntegrityValidation is v1 fuse
+// index 4. Newer Owl shells (26.901+) ship with that fuse enabled and store
+// the expected asar header hash in binary form, which patchExeHash cannot
+// rewrite; disabling the fuse keeps the repacked asar loadable. Older
+// shells never enabled it, so this is a no-op there.
+const FUSE_SENTINEL = Buffer.from("dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX", "ascii");
+const FUSE_EMBEDDED_ASAR_INTEGRITY = 4;
+const FUSE_DISABLED = 1;
+const FUSE_ENABLED = 2;
+
+function disableEmbeddedAsarIntegrityFuse(exePath) {
+  const buf = fs.readFileSync(exePath);
+  let patched = 0;
+  let from = 0;
+  for (;;) {
+    const idx = buf.indexOf(FUSE_SENTINEL, from);
+    if (idx < 0) break;
+    from = idx + FUSE_SENTINEL.length;
+    const version = buf[from];
+    const fuseCount = buf[from + 1];
+    if (version !== 1 || fuseCount <= FUSE_EMBEDDED_ASAR_INTEGRITY) continue;
+    const fuseOffset = from + 2 + FUSE_EMBEDDED_ASAR_INTEGRITY;
+    if (buf[fuseOffset] !== FUSE_ENABLED) continue;
+    buf[fuseOffset] = FUSE_DISABLED;
+    patched += 1;
+  }
+  if (patched === 0) return false;
+  fs.writeFileSync(exePath, buf);
+  return true;
 }
 
 function updateAsarIntegrity(asarPath, infoPlistPath) {

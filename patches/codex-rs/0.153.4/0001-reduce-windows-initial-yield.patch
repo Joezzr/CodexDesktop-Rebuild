@@ -1,0 +1,30 @@
+diff --git a/codex-rs/core/src/unified_exec/mod.rs b/codex-rs/core/src/unified_exec/mod.rs
+index 8dc8f359d..d8266763a 100644
+--- a/codex-rs/core/src/unified_exec/mod.rs
++++ b/codex-rs/core/src/unified_exec/mod.rs
+@@ -71,7 +71,8 @@ pub(crate) use stdin_approval::TerminalPermissions;
+ pub(crate) use stdin_approval::TerminalSandboxSource;
+ 
+ pub(crate) const MIN_YIELD_TIME_MS: u64 = 250;
+-pub(crate) const WINDOWS_INITIAL_EXEC_YIELD_TIME_FLOOR_MS: u64 = 10_000;
++// Keep Windows Desktop command feedback responsive; 10 seconds looks like a stalled UI.
++pub(crate) const WINDOWS_INITIAL_EXEC_YIELD_TIME_FLOOR_MS: u64 = 2_000;
+ // Minimum yield time for an empty `write_stdin`.
+ pub(crate) const MIN_EMPTY_YIELD_TIME_MS: u64 = 5_000;
+ pub(crate) const MAX_YIELD_TIME_MS: u64 = 30_000;
+diff --git a/codex-rs/core/src/unified_exec/process_manager_tests.rs b/codex-rs/core/src/unified_exec/process_manager_tests.rs
+index 523e7eb51..275b3828a 100644
+--- a/codex-rs/core/src/unified_exec/process_manager_tests.rs
++++ b/codex-rs/core/src/unified_exec/process_manager_tests.rs
+@@ -283,10 +283,7 @@ fn initial_exec_yield_time_uses_windows_floor() {
+         clamp_yield_time(/*yield_time_ms*/ 2_000),
+         crate::unified_exec::WINDOWS_INITIAL_EXEC_YIELD_TIME_FLOOR_MS
+     );
+-    assert_eq!(
+-        clamp_yield_time(/*yield_time_ms*/ 5_000),
+-        crate::unified_exec::WINDOWS_INITIAL_EXEC_YIELD_TIME_FLOOR_MS
+-    );
++    assert_eq!(clamp_yield_time(/*yield_time_ms*/ 5_000), 5_000);
+     assert_eq!(clamp_yield_time(/*yield_time_ms*/ 10_000), 10_000);
+     assert_eq!(
+         clamp_yield_time(/*yield_time_ms*/ above_max_yield_time_ms),

@@ -9,10 +9,10 @@
 ## 当前版本组成
 
 - Windows 壳：构建时同步并修补官方 Windows Desktop 壳。
-- Codex 后端：固定到 OpenAI Codex `rust-v0.151.0-alpha.12` 的指定提交。
+- Codex 后端：固定到 OpenAI Codex `rust-v0.153.4` 的指定提交。
 - 构建架构：`x86_64-pc-windows-msvc`。
 - 发布形式：目录式免安装版，直接运行 `ChatGPT.exe`，无需安装 MSIX、注册应用包或安装证书。
-- 当前产物：`out/Codex-win-x64-0.151.0-alpha.12/ChatGPT.exe`。
+- 当前产物：`out/Codex-win-x64-0.153.4/ChatGPT.exe`。
 - SQLite 兼容：编译前将状态迁移 SQL 统一为 Windows CRLF，确保 SQLx 校验和兼容微软商店版现有的 `%USERPROFILE%\.codex` 数据库。
 
 壳版本与 Codex Rust 后端版本是两个独立维度：同步新壳不会自动改变固定的后端版本；升级后端时也会继续检查与当前壳的协议兼容性。
@@ -83,7 +83,7 @@ Remove-Item Env:CODEX_GPU_MODE
 当前推荐直接运行经过验证的目录版：
 
 ```text
-out\Codex-win-x64-0.151.0-alpha.12\ChatGPT.exe
+out\Codex-win-x64-0.153.4\ChatGPT.exe
 ```
 
 ## 构建 Windows x64 版本

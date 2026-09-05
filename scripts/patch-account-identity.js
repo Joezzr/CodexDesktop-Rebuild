@@ -159,6 +159,18 @@ function patchExtractedPlatform(platform, isCheck) {
   const assetsDir = path.join(SRC_DIR, platform, "_asar", "webview", "assets");
   if (!fs.existsSync(assetsDir)) return 0;
   const asset = findRendererAsset(assetsDir);
+  // Shells from 26.901 on absorb this patch's semantics natively: the access
+  // atom update carries the same dual fallbacks the patch used to inject
+  // (accountId: X?.id ?? Y?.accountId ?? null, plan: X?.plan_type ?? Y?.plan ?? null).
+  const nativeFallback =
+    /accountId:[A-Za-z_$][\w$]*\?\.id\?\?[A-Za-z_$][\w$]*\?\.accountId\?\?null/.test(asset.source) &&
+    /plan:[A-Za-z_$][\w$]*\?\.plan_type\?\?[A-Za-z_$][\w$]*\?\.plan\?\?null/.test(asset.source);
+  if (nativeFallback) {
+    console.log(
+      `  [ok] ${relPath(asset.file)}: upstream natively applies the account identity fallback`,
+    );
+    return 0;
+  }
   const result = patchSource(asset.source);
   if (!result.changed) {
     console.log(`  [ok] ${relPath(asset.file)}: account identity fallback already present`);
@@ -323,6 +335,7 @@ function main() {
     : ["mac-arm64", "mac-x64", "win"].filter((platform) =>
         fs.existsSync(path.join(SRC_DIR, platform, "_asar", "webview", "assets")),
       );
+
   let count = 0;
   for (const platform of platforms) count += patchExtractedPlatform(platform, isCheck);
   console.log(`  [ok] ${isCheck ? "would apply" : "applied"} ${count} account identity edit`);
